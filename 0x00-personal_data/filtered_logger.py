@@ -4,6 +4,9 @@ Module for filtering sensitive data from log messages.
 """
 
 import re
+import os
+import mysql.connector
+from mysql.connector.connection import MySQLConnection
 import logging
 from typing import List, Tuple
 
@@ -59,3 +62,13 @@ def get_logger() -> logging.Logger:
     logger.addHandger(stream_handler)
 
     return logger
+
+
+def get_db() -> MySQLConnection:
+    """Connect to MySQL db using env variables and return connection object"""
+    return mysql.connector.connect(
+        host=os.environ.get("PERSONAL_DATA_DB_HOST", "localhost"),
+        user=os.environ.get("PERSONAL_DATA_DB_USERNAME", "root"),
+        password=os.environ.get("PERSONAL_DATA_DB_PASSWORD", ""),
+        database=os.environ.get("PERSONAL_DATA_DB_NAME")
+    )
