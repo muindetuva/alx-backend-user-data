@@ -59,7 +59,7 @@ def get_logger() -> logging.Logger:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(RedactingFormatter(PII_FIELDS))
 
-    logger.addHandger(stream_handler)
+    logger.addHandler(stream_handler)
 
     return logger
 
@@ -70,5 +70,5 @@ def get_db() -> MySQLConnection:
         host=os.environ.get("PERSONAL_DATA_DB_HOST", "localhost"),
         user=os.environ.get("PERSONAL_DATA_DB_USERNAME", "root"),
         password=os.environ.get("PERSONAL_DATA_DB_PASSWORD", ""),
-        database=os.environ.get("PERSONAL_DATA_DB_NAME")
+        database=os.environ.get("PERSONAL_DATA_DB_NAME", "holberton")
     )
