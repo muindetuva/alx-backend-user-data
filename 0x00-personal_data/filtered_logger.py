@@ -72,3 +72,29 @@ def get_db() -> MySQLConnection:
         password=os.environ.get("PERSONAL_DATA_DB_PASSWORD", ""),
         database=os.environ.get("PERSONAL_DATA_DB_NAME", "holberton")
     )
+
+
+def main() -> None:
+    """
+    Obtain a database connection, retrieve all rows in the users table,
+    and log each row with redacted PII fields.
+    """
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM users;")
+    fields = [desc[0] for desc in cursor.description]  # column names
+    logger = get_logger()
+
+    for row in cursor:
+        row_data = "; ".join(
+            f"{field}={value}" for field, value in zip(fields, row)
+        ) + ";"
+        logger.info(row_data)
+
+    cursor.close()
+    db.close()
+
+
+if __name__ == "__main__":
+    main()
