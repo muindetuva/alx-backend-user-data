@@ -14,7 +14,6 @@ class Auth:
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
         """
         Checks if a path requires authentication.
-        For now, returns False, meaning all paths are public.
         Args:
             path (str): The path to check.
             excluded_paths (List[str]): List of paths that do not require
@@ -28,27 +27,27 @@ class Auth:
         if excluded_paths is None or not excluded_paths:
             return True
 
-        # Ensure path ends with a slash for consistent comparison
-        # if it doesn't already, except for root '/'
-        if not path.endswith('/'):
-            normalized_path = path + '/'
-        else:
-            normalized_path = path
+        # Normalize the incoming path to always end with '/'
+        # except for the root path '/' itself
+        normalized_path = path
+        if not normalized_path.endswith('/'):
+            normalized_path += '/'
 
-        # Check if the normalized path is in the excluded_paths
-        for excluded_path in excluded_paths:
-            if excluded_path.endswith('/'):
-                # Handle /status and /status/ when /status/ is excluded
-                if normalized_path == excluded_path:
-                    return False
-                # Handle cases like /admin/foo/ and /admin/ (prefix matching)
-                if normalized_path.startswith(excluded_path):
-                    return False
-            # Fallback for paths that might not end with '/' in excluded_paths
-            # (though the prompt says they will end with '/')
-            # This makes it more robust.
-            elif path == excluded_path:
+        # Normalize excluded_paths to always end with '/'
+        normalized_excluded_paths = [
+            p if p.endswith('/') else p + '/'
+            for p in excluded_paths
+        ]
+
+        # Check if the normalized path exactly matches or starts with any excluded path
+        for excluded_path_normalized in normalized_excluded_paths:
+            if normalized_path == excluded_path_normalized:
                 return False
+            if normalized_path.startswith(excluded_path_normalized):
+                return False
+            # Special case for root path excluded but request path is empty string or only '/'
+            # if excluded_path_normalized == '/' and path == '/':
+            #    return False
 
         return True
 
@@ -62,12 +61,11 @@ class Auth:
         """
         if request is None:
             return None
-        return request.headers.get("Authorization", None)
+        return request.headers.get("Authorization")
 
     def current_user(self, request=None) -> TypeVar('User'):
         """
         Retrieves the current user from the request.
-        For now, returns None.
         Args:
             request: The Flask request object.
         Returns:
