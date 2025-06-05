@@ -4,7 +4,7 @@ Basic Authentication module
 """
 import base64
 from api.v1.auth.auth import Auth
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TypeVar
 
 
 class BasicAuth(Auth):
@@ -95,3 +95,44 @@ class BasicAuth(Auth):
         password = parts[1]
 
         return email, password
+
+    def user_object_from_credentials(self,
+                                     user_email: str,
+                                     user_pwd: str
+                                     ) -> Optional[TypeVar('User')]:
+        """
+        Retrieves a User instance based on email and password.
+
+        Args:
+            user_email (str): The email of the user.
+            user_pwd (str): The password of the user.
+
+        Returns:
+            TypeVar('User'): The User object if credentials valid, else None.
+        """
+        if user_email is None or not isinstance(user_email, str):
+            return None
+
+        if user_pwd is None or not isinstance(user_pwd, str):
+            return None
+
+        # Search for users by email. User.search() is expected to return
+        # a list of User objects (or an empty list).
+        try:
+            users = User.search({"email": user_email})
+        except Exception:
+            # Handle potential errors if User.
+            return None
+
+        # If no users found with that email
+        if not users:
+            return None
+
+        # Assuming email is unique, we take the first user found
+        user = users[0]
+
+        # Check if the provided password is valid for the found user
+        if user.is_valid_password(user_pwd):
+            return user
+        else:
+            return None
