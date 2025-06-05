@@ -35,6 +35,37 @@ def forbidden(error) -> str:
     return jsonify({"error": "Forbidden"}), 403
 
 
+@app.before_request
+def handle_request_auth() -> None:
+    """
+    Handler for before_request Flask hook.
+    Performs authentication checks for incoming requests.
+    """
+    # 1. if auth is None, do nothing
+    if auth is None:
+        return
+
+    # Define excluded paths
+    # Note: These paths are already designed to be "slash-tolerant" by
+    #       Auth.require_auth, but providing them ending with a slash
+    #       is good practice given Auth.require_auth expects it.
+    excluded_paths = [
+        '/api/v1/status/',
+        '/api/v1/unauthorized/',
+        '/api/v1/forbidden/'
+    ]
+
+    # 2. if request.path is not part of excluded_paths using require_auth
+    if auth.require_auth(request.path, excluded_paths):
+        # 3. if auth.authorization_header(request) returns None, raise 401
+        if auth.authorization_header(request) is None:
+            abort(401)
+
+        # 4. if auth.current_user(request) returns None, raise 403
+        if auth.current_user(request) is None:
+            abort(403)
+
+
 if __name__ == "__main__":
     host = getenv("API_HOST", "0.0.0.0")
     port = getenv("API_PORT", "5000")
