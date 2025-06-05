@@ -6,6 +6,8 @@ import base64
 from api.v1.auth.auth import Auth
 from typing import Optional, Tuple, TypeVar
 
+from models.user import User
+
 
 class BasicAuth(Auth):
     """
@@ -136,3 +138,33 @@ class BasicAuth(Auth):
             return user
         else:
             return None
+
+    def current_user(self, request=None) -> Optional[TypeVar('User')]:
+        """
+        Retrieves the User instance for a request by processing
+        Basic Authentication header.
+        """
+        # 1. Get the full Authorization header (from Auth class)
+        authorization_h = self.authorization_header(request)
+        if authorization_h is None:
+            return None
+
+        # 2. Extract the Base64 part
+        base64_h = self.extract_base64_authorization_header(authorization_h)
+        if base64_h is None:
+            return None
+
+        # 3. Decode the Base64 part
+        decoded_h = self.decode_base64_authorization_header(base64_h)
+        if decoded_h is None:
+            return None
+
+        # 4. Extract user credentials (email, password)
+        user_email, user_pwd = self.extract_user_credentials(decoded_h)
+        if user_email is None or user_pwd is None:
+            return None
+
+        # 5. Get the User object from credentials
+        user = self.user_object_from_credentials(user_email, user_pwd)
+
+        return user
