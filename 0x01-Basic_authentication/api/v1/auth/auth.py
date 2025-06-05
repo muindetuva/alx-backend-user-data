@@ -39,15 +39,11 @@ class Auth:
             for p in excluded_paths
         ]
 
-        # Check if the normalized path exactly matches or starts with any excluded path
         for excluded_path_normalized in normalized_excluded_paths:
             if normalized_path == excluded_path_normalized:
                 return False
             if normalized_path.startswith(excluded_path_normalized):
                 return False
-            # Special case for root path excluded but request path is empty string or only '/'
-            # if excluded_path_normalized == '/' and path == '/':
-            #    return False
 
         return True
 
