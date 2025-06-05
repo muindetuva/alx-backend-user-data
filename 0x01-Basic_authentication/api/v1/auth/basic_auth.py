@@ -4,7 +4,7 @@ Basic Authentication module
 """
 import base64
 from api.v1.auth.auth import Auth
-from typing import Optional
+from typing import Optional, Tuple
 
 
 class BasicAuth(Auth):
@@ -65,3 +65,33 @@ class BasicAuth(Auth):
             # Catch Base64 decoding errors (binascii.Error)
             # and UTF-8 decoding errors (UnicodeDecodeError)
             return None
+
+    def extract_user_credentials(self,
+                                 decoded_base64_authorization_header: str
+                                 ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Extracts user email and password from a Base64 decoded string.
+
+        Args:
+            decoded_base64_authorization_header (str): The decoded string
+                                                     (e.g., "email:password").
+
+        Returns:
+            Tuple[Optional[str], Optional[str]]: A tuple containing (email,
+            password),or (None, None) if invalid.
+        """
+        if decoded_base64_authorization_header is None:
+            return None, None
+
+        if not isinstance(decoded_base64_authorization_header, str):
+            return None, None
+
+        if ':' not in decoded_base64_authorization_header:
+            return None, None
+
+        # Split the string by the first occurrence of ':'
+        parts = decoded_base64_authorization_header.split(':', 1)
+        email = parts[0]
+        password = parts[1]
+
+        return email, password
