@@ -19,15 +19,17 @@ redis_client = redis.Redis(
 
 
 def is_worth_caching(
-    expensive: bool, frequent: bool, staleness: bool
+    is_expensive: bool,
+    is_frequent: bool,
+    is_staleness_tolerant: bool,
 ) -> bool:
     """Return whether a result satisfies all three caching criteria."""
-    return expensive and frequent and staleness
+    return is_expensive and is_frequent and is_staleness_tolerant
 
 
-def is_wrong_fix_for_slow_query(missing_index: bool) -> bool:
+def is_wrong_fix_for_slow_query(has_missing_index: bool) -> bool:
     """Return whether caching would hide a known missing database index."""
-    return missing_index
+    return has_missing_index
 
 
 @lru_cache(maxsize=128)
@@ -53,12 +55,12 @@ async def fetch_book_metadata_from_api(isbn: str) -> dict:
 async def get_book_metadata(isbn: str) -> dict:
     """Return locally cached book metadata until its TTL expires."""
     cached = _book_metadata_cache.get(isbn)
-    now = time.monotonic()
+    now = time.time()
     if cached is not None and now - cached[0] < CACHE_TTL_SECONDS:
         return cached[1]
 
     metadata = await fetch_book_metadata_from_api(isbn)
-    _book_metadata_cache[isbn] = (time.monotonic(), metadata)
+    _book_metadata_cache[isbn] = (time.time(), metadata)
     return metadata
 
 
