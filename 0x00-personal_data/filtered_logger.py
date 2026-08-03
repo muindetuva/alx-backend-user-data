@@ -17,14 +17,9 @@ PII_FIELDS: Tuple[str, ...] = ("name", "email", "phone", "ssn", "password")
 def filter_datum(
     fields: List[str], redaction: str, message: str, separator: str
 ) -> str:
-    """Obfuscates the values of specified fields in a log message.
-    """
-    pattern = fr"({'|'.join(fields)})=.*?{re.escape(separator)}"
-    return re.sub(
-        pattern,
-        lambda m: f"{m.group(1)}={redaction}{separator}",
-        message
-    )
+    """Obfuscate selected field values in a structured log message."""
+    pattern = r"({})=.*?{}".format("|".join(fields), separator)
+    return re.sub(pattern, r"\1={}{}".format(redaction, separator), message)
 
 
 class RedactingFormatter(logging.Formatter):
@@ -41,12 +36,10 @@ class RedactingFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format and redact sensitive fields in log messages."""
-        original = record.getMessage()
-        redacted = filter_datum(
-            self.fields, self.REDACTION, original, self.SEPARATOR
+        message = super().format(record)
+        return filter_datum(
+            self.fields, self.REDACTION, message, self.SEPARATOR
         )
-        record.msg = redacted
-        return super().format(record)
 
 
 def get_logger() -> logging.Logger:
@@ -59,7 +52,8 @@ def get_logger() -> logging.Logger:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(RedactingFormatter(PII_FIELDS))
 
-    logger.addHandler(stream_handler)
+    if not logger.handlers:
+        logger.addHandler(stream_handler)
 
     return logger
 
@@ -70,7 +64,7 @@ def get_db() -> MySQLConnection:
         host=os.environ.get("PERSONAL_DATA_DB_HOST", "localhost"),
         user=os.environ.get("PERSONAL_DATA_DB_USERNAME", "root"),
         password=os.environ.get("PERSONAL_DATA_DB_PASSWORD", ""),
-        database=os.environ.get("PERSONAL_DATA_DB_NAME", "holberton")
+        database=os.environ.get("PERSONAL_DATA_DB_NAME")
     )
 
 
